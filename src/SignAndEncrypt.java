@@ -38,7 +38,6 @@ import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
 
-
 /**
  * @author jordanbaucke
  * 
@@ -63,28 +62,29 @@ public class SignAndEncrypt {
 
 		// hardcode our private key password **NOT A GOOD IDEA...duh**
 		String privateKeyPassword = "hongkong";
-		
+
 		PGPPublicKey pubKey = null;
 		// Load public key
 		try {
-			pubKey = readPublicKey(loader.getResourceAsStream(
-					"sign-and-encrypt_pub.asc"));
+			pubKey = readPublicKey(loader
+					.getResourceAsStream("sign-and-encrypt_pub.asc"));
 		} catch (IOException | PGPException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-		if(pubKey != null){
+
+		if (pubKey != null) {
 			System.out.println("Successfully read public key: ");
-//			System.out.println("Key Owner: "+pubKey.getUserIDs());
-//			System.out.println("Key Stength: "+pubKey.getBitStrength());
-//			System.out.println("Key Algorithm: "+pubKey.getAlgorithm()+"\n\n");
+			// System.out.println("Key Owner: "+pubKey.getUserIDs());
+			// System.out.println("Key Stength: "+pubKey.getBitStrength());
+			// System.out.println("Key Algorithm: "+pubKey.getAlgorithm()+"\n\n");
 		}
 
 		// Load private key, **NOTE: still secret, we haven't unlocked it yet**
 		PGPSecretKey pgpSec = null;
 		try {
-			pgpSec = readSecretKey(loader.getResourceAsStream("sign-and-encrypt_priv.asc"));
+			pgpSec = readSecretKey(loader
+					.getResourceAsStream("sign-and-encrypt_priv.asc"));
 		} catch (IOException | PGPException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -100,14 +100,15 @@ public class SignAndEncrypt {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-		if(messageSignature != null){
-			System.out.println("Successfully signed your message with the private key.\n\n");
-			System.out.println(messageSignature+"\n\n");
+
+		if (messageSignature != null) {
+			System.out
+					.println("Successfully signed your message with the private key.\n\n");
+			System.out.println(messageSignature + "\n\n");
 		}
-		
+
 		System.out.println("Now Encrypting it.");
-		
+
 		String encryptedMessage = null;
 		try {
 			encryptedMessage = encryptByteArray(message.getBytes(), pubKey,
@@ -116,14 +117,13 @@ public class SignAndEncrypt {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-		if(encryptedMessage != null){
+
+		if (encryptedMessage != null) {
 			System.out.println("PGP Encrypted Message: ");
 			System.out.println(encryptedMessage);
 		}
 
 	}
-
 
 	/**
 	 * @param message
@@ -151,13 +151,13 @@ public class SignAndEncrypt {
 		PGPPrivateKey pgpPrivKey = pgpSec
 				.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder()
 						.setProvider("BC").build(pass));
-		
-		// Signature generator, we can generate the public key from the private key! Nifty!
+
+		// Signature generator, we can generate the public key from the private
+		// key! Nifty!
 		PGPSignatureGenerator sGen = new PGPSignatureGenerator(
 				new JcaPGPContentSignerBuilder(pgpSec.getPublicKey()
 						.getAlgorithm(), PGPUtil.SHA1).setProvider("BC"));
 
-		
 		sGen.init(PGPSignature.BINARY_DOCUMENT, pgpPrivKey);
 
 		Iterator it = pgpSec.getPublicKey().getUserIDs();
@@ -198,7 +198,7 @@ public class SignAndEncrypt {
 
 		return encOut.toString();
 	}
-	
+
 	/**
 	 * 
 	 * @param clearData
@@ -211,7 +211,7 @@ public class SignAndEncrypt {
 	 * @throws NoSuchProviderException
 	 */
 	@SuppressWarnings("deprecation")
-	private static String encryptByteArray(byte[] clearData,
+	public static String encryptByteArray(byte[] clearData,
 			PGPPublicKey encKey, boolean withIntegrityCheck, boolean armor)
 			throws IOException, PGPException, NoSuchProviderException {
 
@@ -227,16 +227,12 @@ public class SignAndEncrypt {
 		PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(
 				PGPCompressedDataGenerator.ZIP);
 		OutputStream cos = comData.open(bOut); // open it with the final
-		// destination
+
 		PGPLiteralDataGenerator lData = new PGPLiteralDataGenerator();
 
-		// we want to generate compressed data. This might be a user option
-		// later,
-		// in which case we would pass in bOut.
-		OutputStream pOut = lData.open(cos, // the compressed output stream
-				PGPLiteralData.BINARY, PGPLiteralData.CONSOLE, // "filename" to
-																// store
-				clearData.length, // length of clear data
+		OutputStream pOut = lData.open(cos, PGPLiteralData.BINARY,
+				PGPLiteralData.CONSOLE, clearData.length, // length of clear
+															// data
 				new Date() // current time
 				);
 		pOut.write(clearData);
@@ -248,18 +244,9 @@ public class SignAndEncrypt {
 				PGPEncryptedData.CAST5, withIntegrityCheck, new SecureRandom(),
 				"BC");
 
-		//
-		// PGPEncryptedDataGenerator cPk = new PGPEncryptedDataGenerator(
-
 		cPk.addMethod(encKey);
 
 		byte[] bytes = bOut.toByteArray();
-
-		/*
-		 * String Name = "BC"; if (Security.getProvider(Name) == null) {
-		 * System.out.println("not installed"); } else {
-		 * System.out.println("installed"); }
-		 */
 
 		OutputStream cOut = cPk.open(out, bytes.length);
 
